@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# check xtools
+if ! type xdistdir > /dev/null; then
+	echo "xdistdir is missing" >&2
+	missing_tool+=" xtools"
+fi
+# check hub
+if ! type hub > /dev/null; then
+	echo "hub is missing" >&2
+	missing_tool+=" hub"
+fi
+# check ghi
+if ! type ghi > /dev/null; then
+	echo "ghi is missing" >&2
+	missing_tool+=" ghi"
+fi
+if [ "$missing_tool" ]; then
+	echo "fix with: xbps-install -Sy" $missing_tool >&2
+	exit 1
+fi
+
+GREEN=$(tput setf 2)
+RESET=$(tput sgr0)
+skipped=
+cd "$(xdistdir)" || exit 1
+git pull origin
+for arg; do
+	issue=${arg/*\/}
+	imsg=$(ghi show "$issue")
+	[ "$?" -eq 0 ] || continue
+	if echo "$imsg" | sed -n "2p" | grep -qF "[closed]"; then
+		echo "$imsg"
+		echo
+		echo "PR is closed"
+		continue
+	fi
+
+	while : ; do
+		echo "$GREEN$imsg$RESET"
+		printf "* %s\n" "[m]erge" "[r]ebase" "show [p]atch" "open [w]eb" "[s]kip"
+		read -rp "> " -n 1 action
+		echo
+
+		head=$(git rev-parse HEAD)
+		case $action in
+			m)
+				hub merge "https://github.com/voidlinux/void-packages/pull/$issue"
+				continue 2 ;;
+			r)
+				hub merge "https://github.com/voidlinux/void-packages/pull/$issue"
+				git rebase "$head"
+				git filter-branch -f --msg-filter \
+					'
+						i=$(cat);
+						printf "%s\n" "$i" "" "Closes #'"$issue"'." ' \
+					"$head..HEAD"
+				continue 2 ;;
+			p|w)
+				ghi show "-$action" "$issue" ;;
+			s)
+				skipped="$skipped $issue"
+				continue 2 ;;
+		esac
+	done
+	printf "$GREEN=%.0s" $(tput cols | xargs seq 1)
+	echo $RESET
+done
+echo "Skipped Issues:" $skipped
+read -rp "Open in browser? " -n 1 action
+echo
+case $action in
+	""|y|Y)
+		for i in $skipped; do
+			ghi show -w "$i"
+		done
+		;;
+esac
