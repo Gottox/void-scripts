@@ -1,5 +1,6 @@
 // ==UserScript==
-// @name        void_buildbot_scrolldown
+// @name        Void: Buildbot Scrolldown
+// @description Automaticly scrolls down on buildbot output
 // @namespace   void
 // @include     https://build.voidlinux.eu/builders/*/builds/*/steps/*/logs/stdio
 // @version     1

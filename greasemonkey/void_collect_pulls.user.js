@@ -1,5 +1,6 @@
 // ==UserScript==
-// @name        void_collect_pulls
+// @name        Void: Collect Pulls
+// @description Collect pull requests to an input box. Can be used with the merge-pr script.
 // @namespace   void
 // @include     https://github.com/*/void-packages/pulls*
 // @version     1

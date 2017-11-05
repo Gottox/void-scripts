@@ -1,5 +1,6 @@
 // ==UserScript==
-// @name        void_updates_checkboxes
+// @name        Void: Update Checkboxes
+// @description Inserts Checkboxes to void-updates. Poor mans To-Do list.
 // @namespace   void
 // @include     https://repo.voidlinux.eu/void-updates/void-updates.txt
 // @version     1
