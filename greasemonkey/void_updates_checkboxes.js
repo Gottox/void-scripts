@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name        Void-Updates
-// @namespace   http://voidlinux.eu
+// @name        void_updates_checkboxes
+// @namespace   void
 // @include     https://repo.voidlinux.eu/void-updates/void-updates.txt
 // @version     1
 // @grant       none

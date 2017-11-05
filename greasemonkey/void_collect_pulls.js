@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name        collect_prs
-// @namespace   gottox
+// @name        void_collect_pulls
+// @namespace   void
 // @include     https://github.com/*/void-packages/pulls*
 // @version     1
 // @grant       none
