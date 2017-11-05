@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Void: auto choose pull method
+// @name        Void: Auto Choose Pull Method
 // @description More then 2 commits -> merge; else rebase
 // @namespace   void
 // @include     https://github.com/voidlinux/void-packages/pull/*
