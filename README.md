@@ -7,7 +7,7 @@ A set of scripts I use to manage stuff I do for void.
 
 This is a set of Greasemonkey Scripts that make my life easier.
 
-To install those scripts just make sure you have Greasemonkey installed and open it:
+To install those scripts just make sure you have Greasemonkey installed and open them:
 
 ```
 firefox greasemonkey/*.user.js
