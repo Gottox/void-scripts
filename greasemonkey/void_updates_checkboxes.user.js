@@ -12,10 +12,6 @@ const runId = e.innerText.split("\n",2)[0].innerText;
 const now = new Date().getTime();
 const twoWeeks = 1000 * 2 * 7 * 24 * 60 * 60;
 
-if(localStorage.$runId != runId) {
-	localStorage.clear();
-	localStorage.$runId = runId;
-}
 e.innerHTML="<style>.old { color: red; } :checked,:checked ~ label { opacity: 0.2; }</style>"+e.innerHTML.replace(/^(\S+) +(\S+) [^ ]+ ([^ ]+) +(([^ ]+) +|)([^ \n]*)$/gm,
 	(all, name, oVer, nVer, date) => {
 	  date = new Date(date.trim()).getTime();
