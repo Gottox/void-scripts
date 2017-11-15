@@ -66,13 +66,15 @@ for arg; do
 	printf "$GREEN=%.0s" $(tput cols | xargs seq 1)
 	echo $RESET
 done
-echo "Skipped Issues:" $skipped
-read -rp "Open in browser? " -n 1 action
-echo
-case $action in
-	""|y|Y)
-		for i in $skipped; do
-			ghi show -w "$i"
-		done
-		;;
-esac
+if [ "$skipped" ]; then
+	echo "Skipped Issues:" $skipped
+	read -rp "Open in browser? " -n 1 action
+	echo
+	case $action in
+		""|y|Y)
+			for i in $skipped; do
+				ghi show -w "$i"
+			done
+			;;
+	esac
+fi
