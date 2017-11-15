@@ -11,11 +11,11 @@ window.addEventListener("load", () => {
 	document.querySelector(".merge-message button ~ button").click();
 	const commitCount = +document.getElementById("commits_tab_counter").innerText;
 	const commentCount = +document.getElementById("conversation_tab_counter").innerText;
-
-	setTimeout(() => {
+	setTimeout(update, 200);
+	function update() {
 		const pulltypes = document.querySelectorAll(".merge-message .select-menu-modal-holder .select-menu-item");
 		if(pulltypes.length != 3)
-			return alert("Must be three pulltypes!");
+			return setTimeout(update, 200);
 
 		let method;
 		if(commitCount > 2)
@@ -29,5 +29,5 @@ window.addEventListener("load", () => {
 				return x.click();
 		}
 		return alert(`No pull type ${method} found`);
-	}, 20);
+	}
 });
