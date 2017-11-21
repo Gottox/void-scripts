@@ -12,21 +12,21 @@ let timeout = -1;
 let finished = false;
 let ignoreNext = false;
 
-document.scrollingElement.style.paddingBottom = '20px';
+const E = document.scrollingElement
+E.style.paddingBottom = '20px';
 
 function doScroll() {
   if(finished)
     return;
-  const b = document.body;
-  b.style.background = "linear-gradient(to bottom, rgba(125,185,232,0) 80%,rgba(125,185,232,1) 100%) fixed";
+  E.style.background = "#ffa";
 
 
   ignoreNext = true;
   timeout = setTimeout(doScroll, 500);
-  window.scrollTo(0, document.scrollingElement.scrollHeight);
+  window.scrollTo(0, E.scrollHeight);
 }
 function clearScroll() {
-  document.body.style.background = "";
+  E.style.background = "";
   window.clearTimeout(timeout);
   timeout = -1;
 }
@@ -42,8 +42,7 @@ document.addEventListener("DOMContentLoaded", e => {
 document.addEventListener("scroll", e => {
   if(ignoreNext)
     return ignoreNext = false;
-  const b = document.scrollingElement;
-  if (document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight - e.pageY === 0 && timeout === -1) {
+  if (E.scrollHeight - E.clientHeight - e.pageY === 0 && timeout === -1) {
     doScroll();
   } else if(timeout !== -1) {
     clearScroll();
