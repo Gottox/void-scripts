@@ -1,71 +1,114 @@
 #!/bin/bash
+set -e
+
+update_pr() {
+	$GHI show "$i" > ".git/mass-merge-pr/$i"
+}
+
+fetch_pr() {
+	printf "Fetching Pullrequests... " >&2
+	for i; do
+		{
+			update_pr "$i"
+			printf . >&2
+		} &
+	done
+	wait
+	printf " done!\n" >&2
+}
+
+fetch_git() {
+	printf "Fetching Git..." >&2
+	printf "+refs/pull/%i/head\n" "$@" | \
+		xargs $GIT fetch origin master > /dev/null 2>&1
+	tr "/" "\t" < .git/FETCH_HEAD | awk '{print $4 " " $1 }'
+	printf " done!\n" >&2
+}
+
+handle_pr() {
+	local issue="$1" hash="$2"
+	local head=$($GIT rev-parse HEAD)
+	local base=$($GIT merge-base $head $hash)
+
+	{
+		cat .git/mass-merge-pr/$issue
+		$GIT show --oneline --no-patch "$head..$hash"
+		$GIT diff --stat "$head...$hash"
+	} | less -F
+	printf "| %s " \
+		"${RED}m${RESET}erge" \
+		"${RED}r${RESET}ebase" \
+		"${RED}l${RESET}og" \
+		"${RED}p${RESET}atch" \
+		"${RED}w${RESET}eb" \
+		"${RED}s${RESET}kip"
+	read -p "|>" -r -N 1 action
+	clear
+	case $action in
+		m)
+			# TODO: Proper commit message.
+			$GIT merge "$hash"
+			return ;;
+		r)
+			$GIT rev-list --no-merges --reverse "$head..$hash" | $GIT cherry-pick --stdin --allow-empty
+			$GIT filter-branch -f --msg-filter \
+				"cat; echo; echo 'Closes #$issue.'" \
+				"$head..HEAD"
+			return ;;
+		p)
+			$GIT diff "$base...$hash" | less;;
+		l)
+			$GIT show "$base...$hash" | less;;
+		w)
+			$GHI show "-w" "$issue" ;;
+		s)
+			skipped="$skipped $issue"
+			return ;;
+	esac
+	return 1;
+}
+
 
 # check xtools
 if ! type xdistdir > /dev/null; then
 	echo "xdistdir is missing" >&2
 	missing_tool+=" xtools"
 fi
-# check hub
-if ! type hub > /dev/null; then
-	echo "hub is missing" >&2
-	missing_tool+=" hub"
-fi
 # check ghi
 if ! type ghi > /dev/null; then
 	echo "ghi is missing" >&2
 	missing_tool+=" ghi"
 fi
+
 if [ "$missing_tool" ]; then
-	echo "fix with: xbps-install -Sy" $missing_tool >&2
+	echo "fix with: xbps-install -Sy$missing_tool" >&2
 	exit 1
 fi
 
-GREEN=$(tput setf 2)
-RESET=$(tput sgr0)
+cd "$(xdistdir)"
+
+if [ "$(git rev-parse --abbrev-ref HEAD)" != "master" ]; then
+	echo "== Not on master, abort ==" 2>&1
+	exit 1;
+fi
+
+mkdir -p .git/mass-merge-pr
+
+readonly GIT="git --no-pager -c color.ui=always"
+readonly GHI="ghi --color"
+readonly RED=$(printf "\e[31m")
+readonly RESET=$(printf "\e[0m")
 skipped=
-cd "$(xdistdir)" || exit 1
-git pull origin
-for arg; do
-	issue=${arg/*\/}
-	imsg=$(ghi show "$issue")
-	[ "$?" -eq 0 ] || continue
-	if echo "$imsg" | sed -n "2p" | grep -qF "[closed]"; then
-		echo "$imsg"
-		echo
-		echo "PR is closed"
-		continue
-	fi
 
-	while : ; do
-		echo "$GREEN$imsg$RESET"
-		printf "* %s\n" "[m]erge" "[r]ebase" "show [p]atch" "open [w]eb" "[s]kip"
-		read -rp "> " -n 1 action
-		echo
+readonly PR_TABLE="$(fetch_git "$@")"
+fetch_pr "$@"
 
-		head=$(git rev-parse HEAD)
-		case $action in
-			m)
-				hub merge "https://github.com/voidlinux/void-packages/pull/$issue"
-				continue 2 ;;
-			r)
-				hub merge "https://github.com/voidlinux/void-packages/pull/$issue"
-				git rebase "$head"
-				git filter-branch -f --msg-filter \
-					'
-						i=$(cat);
-						printf "%s\n" "$i" "" "Closes #'"$issue"'." ' \
-					"$head..HEAD"
-				continue 2 ;;
-			p|w)
-				ghi show "-$action" "$issue" ;;
-			s)
-				skipped="$skipped $issue"
-				continue 2 ;;
-		esac
-	done
-	printf "$GREEN=%.0s" $(tput cols | xargs seq 1)
-	echo $RESET
+$GIT rebase --autostash origin/master
+for i; do
+	clear
+	until handle_pr $(echo "$PR_TABLE" | grep "^$i "); do : ; done
 done
+
 if [ "$skipped" ]; then
 	echo "Skipped Issues:" $skipped
 	read -rp "Open in browser? " -n 1 action
@@ -73,7 +116,7 @@ if [ "$skipped" ]; then
 	case $action in
 		""|y|Y)
 			for i in $skipped; do
-				ghi show -w "$i"
+				$GHI show -w "$i"
 			done
 			;;
 	esac
