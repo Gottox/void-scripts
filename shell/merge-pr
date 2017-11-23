@@ -50,8 +50,8 @@ handle_pr() {
 			$GIT merge "$hash"
 			return ;;
 		r)
-			$GIT rev-list --no-merges --reverse "$head..$hash" | $GIT cherry-pick --stdin --allow-empty
-			$GIT filter-branch -f --msg-filter \
+			$GIT rev-list --no-merges --reverse "$head..$hash" | $GIT cherry-pick --stdin --allow-empty --keep-redundant-commits
+			$GIT filter-branch -f --prune-empty --msg-filter \
 				"cat; echo; echo 'Closes #$issue.'" \
 				"$head..HEAD"
 			return ;;
