@@ -30,19 +30,23 @@ handle_pr() {
 	local head=$($GIT rev-parse HEAD)
 	local base=$($GIT merge-base $head $hash)
 
-	{
-		cat .git/mass-merge-pr/$issue
-		$GIT show --oneline --no-patch "$head..$hash"
-		$GIT diff --stat "$head...$hash"
-	} | less -F
-	printf "| %s " \
-		"${RED}m${RESET}erge" \
-		"${RED}r${RESET}ebase" \
-		"${RED}l${RESET}og" \
-		"${RED}p${RESET}atch" \
-		"${RED}w${RESET}eb" \
-		"${RED}s${RESET}kip"
-	read -p "|>" -r -N 1 action
+	if [ "$AUTO_ACTION" ]; then
+		action=$AUTO_ACTION
+	else
+		{
+			cat .git/mass-merge-pr/$issue
+			$GIT show --oneline --no-patch "$head..$hash"
+			$GIT diff --stat "$head...$hash"
+		} | $PAGER_F
+		printf "| %s " \
+			"${RED}m${RESET}erge" \
+			"${RED}r${RESET}ebase" \
+			"${RED}l${RESET}og" \
+			"${RED}p${RESET}atch" \
+			"${RED}w${RESET}eb" \
+			"${RED}s${RESET}kip"
+		read -p "|>" -r -N 1 action
+	fi
 	clear
 	case $action in
 		m)
@@ -56,9 +60,9 @@ handle_pr() {
 				"$head..HEAD"
 			return ;;
 		p)
-			$GIT diff "$base...$hash" | less;;
+			$GIT diff "$base...$hash" | $PAGER;;
 		l)
-			$GIT show "$base...$hash" | less;;
+			$GIT show "$base...$hash" | $PAGER;;
 		w)
 			$GHI show "-w" "$issue" ;;
 		s)
@@ -98,12 +102,33 @@ readonly GIT="git --no-pager -c color.ui=always"
 readonly GHI="ghi --color"
 readonly RED=$(printf "\e[31m")
 readonly RESET=$(printf "\e[0m")
+readonly OPTSTRING="rmb:"
 skipped=
 
+eval set -- $(getopt "$OPTSTRING" "$@");
+
+PAGER="less"
+PAGER_F="less -F"
+AUTO_ACTION=
+while getopts "$OPTSTRING" opt; do
+	case $opt in
+		m) AUTO_ACTION=m; PAGER=cat; PAGER_F=cat;;
+		r) AUTO_ACTION=r; PAGER=cat; PAGER_F=cat ;;
+		b) branch="$OPTARG" ;;
+		--) shift; break;;
+	esac
+done
+shift $(($OPTIND - 1))
+
 readonly PR_TABLE="$(fetch_git "$@")"
+
 fetch_pr "$@"
 
 $GIT rebase --autostash origin/master
+if [ "$branch" ]; then
+	git checkout -b "$branch"
+fi
+
 for i; do
 	clear
 	until handle_pr $(echo "$PR_TABLE" | grep "^$i "); do : ; done
