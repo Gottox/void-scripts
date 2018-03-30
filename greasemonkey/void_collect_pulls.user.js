@@ -2,29 +2,29 @@
 // @name        Void: Collect Pulls
 // @description Collect pull requests to an input box. Can be used with the merge-pr script.
 // @namespace   void
-// @include     https://github.com/*/void-packages/pulls*
+// @include     https://github.com/*
 // @version     1
 // @grant       none
 // ==/UserScript==
 
-const checkboxes = Array.from(document.querySelectorAll("input[name='issues[]'][type='checkbox']"))
-const input = document.createElement('input');
-input.type = 'text';
-input.style.position = 'absolute';
-input.style.margin = '-3px 20px';
-input.style.width = '400px';
-input.onfocus = x => x.target.select();
-input.readonly = true;
-document.querySelector('#js-issues-toolbar span.pl-3').appendChild(input);
-
-checkboxes.forEach(x => {
-  addEventListener('change', ev => {
-    update();
-    return false;
-  });
-  
-})
-
 function update() {
+  let input = document.getElementById('_void_pull_textbox');
+  if(!input) {
+    input = document.createElement('input');
+    input.type = 'text';
+    input.style.position = 'absolute';
+    input.style.margin = '-3px 20px';
+    input.style.width = '400px';
+    input.onfocus = x => x.target.select();
+    input.readonly = true;
+    input.id = '_void_pull_textbox';
+    const parent = document.querySelector('#js-issues-toolbar span.pl-3');
+    if(!parent)
+      return;
+    parent.appendChild(input);
+  }
+  const checkboxes = Array.from(document.querySelectorAll("input[name='issues[]'][type='checkbox']"))
   input.value = checkboxes.filter(x => x.checked).map(x => x.value).join(" ");
 }
+
+document.body.addEventListener('change', update);
